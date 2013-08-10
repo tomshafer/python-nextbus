@@ -25,11 +25,26 @@ def _init_fetcher():
         import urllib2
     except:
         have_urllib2 = False
-
+    
     if have_urllib2:
-        def urllib2_fetcher(url):
-            return urllib2.urlopen(url)
-        _url_fetcher = urllib2_fetcher
+        try:
+            import cStringIO
+            import gzip
+            import re
+            def urllib2_fetcher_w_gzip(url):                
+                req = urllib2.Request(url=url,
+                        headers={'accept-encoding': 'gzip, deflate'})
+                res = urllib2.urlopen(req)
+                if re.search(r'gzip', str(res.info()), re.I) is not None:
+                    obj = cStringIO.StringIO(res.read())
+                    return gzip.GzipFile(fileobj=obj)
+                else:
+                    return res
+            _url_fetcher = urllib2_fetcher_w_gzip
+        except:
+            def urllib2_fetcher(url):
+                return urllib2.urlopen(url)
+            _url_fetcher = urllib2_fetcher
 _init_fetcher()
 
 
